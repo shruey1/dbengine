@@ -16,11 +16,19 @@ async function post(path, body) {
   return res.json();
 }
 
-export function generateModel(userQuery, operation, existingModel) {
+export function generateModel(
+  userQuery,
+  operation,
+  existingModel,
+  modelType,
+  dbEngine
+) {
   return post('/workflow/generate', {
     user_query: userQuery,
     operation: operation || '',
     existing_model: existingModel || null,
+    model_type: modelType || 'both',
+    db_engine: dbEngine || '',
   });
 }
 
@@ -58,4 +66,25 @@ export function generateERDXML(sql, title) {
     sql: sql,
     title: title || 'Entity Relationship Diagram',
   });
+}
+
+export function generateERDFromModel(dataModel, title) {
+  return post('/workflow/erd/from-model', {
+    data_model: dataModel,
+    title: title || 'Entity Relationship Diagram',
+  });
+}
+
+export async function generateERDPDM(sql, title = "Physical Data Model") {
+  const res = await fetch("/workflow/erd/pdm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sql, title }),
+  });
+
+  if (!res.ok) {
+    throw new Error("PDM generation failed");
+  }
+
+  return res.json();
 }
