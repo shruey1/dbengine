@@ -1,6 +1,7 @@
 import { useState } from 'react';
+
 import { Btn, Badge } from './ui/Primitives';
-import { generateERDXML } from '../api/client';
+import { generateERDXML, generateERDPDM } from '../api/client';
 
 const C = {
   surface: '#13161e',
@@ -15,6 +16,7 @@ const C = {
   text: '#e2e8f0',
   textMuted: '#64748b',
   textDim: '#94a3b8',
+  teal: '#2dd4bf',
 };
 
 export function ERDView({
@@ -28,9 +30,12 @@ export function ERDView({
   const [zoom, setZoom] = useState(1);
   const [xmlLoading, setXmlLoading] = useState(false);
   const [xmlError, setXmlError] = useState('');
+  const [pdmLoading, setPdmLoading] = useState(false);
+  const [pdmError, setPdmError] = useState('');
 
   const hasImage = erdData && erdData.image_base64;
   const hasError = erdData && erdData.error;
+  const hasSql = sqlOutput && sqlOutput.combined_sql;
 
   function downloadPNG() {
     if (!hasImage) return;
@@ -41,14 +46,12 @@ export function ERDView({
   }
 
   function downloadXML() {
-    const sql = sqlOutput && sqlOutput.combined_sql;
-    if (!sql) return;
-
+    if (!hasSql) return;
     setXmlLoading(true);
     setXmlError('');
 
-    generateERDXML(sql)
-      .then(function (res) {
+    generateERDXML(sqlOutput.combined_sql)
+      .then((res) => {
         if (res.error) {
           setXmlError(res.error);
           return;
@@ -61,12 +64,31 @@ export function ERDView({
         link.click();
         URL.revokeObjectURL(url);
       })
-      .catch(function (e) {
-        setXmlError(e?.message || 'Failed to generate XML.');
+      .catch((e) => setXmlError(e?.message || 'Failed to generate XML.'))
+      .finally(() => setXmlLoading(false));
+  }
+
+  function downloadPDM() {
+    if (!hasSql) return;
+    setPdmLoading(true);
+    setPdmError('');
+
+    generateERDPDM(sqlOutput.combined_sql)
+      .then((res) => {
+        if (res.error) {
+          setPdmError(res.error);
+          return;
+        }
+        const blob = new Blob([res.xml], { type: 'application/xml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'erd_diagram.pdm';
+        link.click();
+        URL.revokeObjectURL(url);
       })
-      .finally(function () {
-        setXmlLoading(false);
-      });
+      .catch((e) => setPdmError(e?.message || 'Failed to generate PDM.'))
+      .finally(() => setPdmLoading(false));
   }
 
   return (
@@ -117,7 +139,7 @@ export function ERDView({
         </Btn>
       </div>
 
-      {/* Error state */}
+      {/* ERD ERROR */}
       {hasError && (
         <div
           style={{
@@ -131,12 +153,11 @@ export function ERDView({
           <p style={{ fontWeight: 700, color: C.red, marginBottom: 8 }}>
             ⚠ ERD Generation Failed
           </p>
-
           <p style={{ color: C.textDim, fontSize: 13, marginBottom: 12 }}>
             {erdData.error}
           </p>
 
-          {erdData.error && erdData.error.includes('Graphviz') && (
+          {erdData.error.includes('Graphviz') && (
             <div
               style={{
                 background: '#0d0f14',
@@ -147,17 +168,10 @@ export function ERDView({
                 color: C.textDim,
               }}
             >
-              <p
-                style={{
-                  color: C.amber,
-                  marginBottom: 6,
-                  fontFamily: 'inherit',
-                }}
-              >
-                Install Graphviz:
-              </p>
+              <p style={{ color: C.amber, marginBottom: 6 }}>Install Graphviz:</p>
               <p style={{ marginBottom: 4 }}>
-                Windows: <span style={{ color: C.green }}>winget install graphviz</span>
+                Windows:{' '}
+                <span style={{ color: C.green }}>winget install graphviz</span>
               </p>
               <p style={{ marginBottom: 4 }}>
                 Then: <span style={{ color: C.green }}>pip install graphviz</span>
@@ -168,9 +182,7 @@ export function ERDView({
 
           <div style={{ marginTop: 16 }}>
             <Btn
-              onClick={() =>
-                onRegenerate(sqlOutput && sqlOutput.combined_sql)
-              }
+              onClick={() => onRegenerate(sqlOutput?.combined_sql)}
               loading={loading}
             >
               ↺ Try Again
@@ -179,7 +191,7 @@ export function ERDView({
         </div>
       )}
 
-      {/* XML error */}
+      {/* XML ERROR */}
       {xmlError && (
         <div
           style={{
@@ -196,23 +208,38 @@ export function ERDView({
         </div>
       )}
 
-      {/* Diagram */}
+      {/* PDM ERROR */}
+      {pdmError && (
+        <div
+          style={{
+            background: C.redSoft,
+            border: '1px solid ' + C.red + '44',
+            borderRadius: 8,
+            padding: '10px 16px',
+            marginBottom: 12,
+            fontSize: 13,
+            color: C.red,
+          }}
+        >
+          ⚠ PDM export failed: {pdmError}
+        </div>
+      )}
+
+      {/* DIAGRAM */}
       {hasImage && (
         <>
-          {/* Zoom controls */}
+          {/* Controls */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 10,
               marginBottom: 12,
+              flexWrap: 'wrap',
             }}
           >
-            {/* Zoom out */}
             <button
-              onClick={() =>
-                setZoom((z) => Math.max(0.3, z - 0.15))
-              }
+              onClick={() => setZoom((z) => Math.max(0.3, z - 0.15))}
               style={{
                 width: 32,
                 height: 32,
@@ -241,11 +268,8 @@ export function ERDView({
               {Math.round(zoom * 100)}%
             </span>
 
-            {/* Zoom in */}
             <button
-              onClick={() =>
-                setZoom((z) => Math.min(3, z + 0.15))
-              }
+              onClick={() => setZoom((z) => Math.min(3, z + 0.15))}
               style={{
                 width: 32,
                 height: 32,
@@ -263,7 +287,6 @@ export function ERDView({
               +
             </button>
 
-            {/* Reset zoom */}
             <button
               onClick={() => setZoom(1)}
               style={{
@@ -279,13 +302,9 @@ export function ERDView({
               Reset
             </button>
 
-            {/* Download buttons */}
+            {/* Downloads */}
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 10 }}>
-              <Btn
-                variant="ghost"
-                onClick={downloadPNG}
-                style={{ padding: '7px 16px', fontSize: 13 }}
-              >
+              <Btn variant="ghost" onClick={downloadPNG} style={{ fontSize: 13 }}>
                 ⬇ Download PNG
               </Btn>
 
@@ -293,9 +312,8 @@ export function ERDView({
                 variant="ghost"
                 onClick={downloadXML}
                 loading={xmlLoading}
-                disabled={!sqlOutput || !sqlOutput.combined_sql}
+                disabled={!hasSql}
                 style={{
-                  padding: '7px 16px',
                   fontSize: 13,
                   border: '1px solid ' + C.purple,
                   color: C.purple,
@@ -303,29 +321,42 @@ export function ERDView({
               >
                 ⬇ Download XML
               </Btn>
+
+              <Btn
+                variant="ghost"
+                onClick={downloadPDM}
+                loading={pdmLoading}
+                disabled={!hasSql}
+                style={{
+                  fontSize: 13,
+                  border: '1px solid ' + C.teal,
+                  color: C.teal,
+                }}
+              >
+                ⬇ Download PDM
+              </Btn>
             </div>
           </div>
 
-          {/* XML hint */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              marginBottom: 10,
-              fontSize: 12,
-              color: C.textMuted,
-            }}
-          >
-            <span style={{ color: C.purple }}>ⓘ</span>
-            XML is draw.io compatible — import via{' '}
-            <span style={{ color: C.textDim }}>Extras → Edit Diagram</span>
-            {' '}or{' '}
-            <span style={{ color: C.textDim }}>File → Import from → XML</span>.
-            Also works with Lucidchart and yEd.
+          {/* Hints */}
+          <div style={{ fontSize: 12, color: C.textMuted, marginBottom: 14 }}>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <span style={{ color: C.purple }}>ⓘ</span>
+              <span>
+                XML is draw.io compatible (File → Import → XML). Also works in
+                Lucidchart and yEd.
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: 6 }}>
+              <span style={{ color: C.teal }}>ⓘ</span>
+              <span>
+                PDM opens in SAP PowerDesigner 16.x via File → Open.
+              </span>
+            </div>
           </div>
 
-          {/* Image container */}
+          {/* Image */}
           <div
             style={{
               background: '#090b10',
@@ -372,9 +403,7 @@ export function ERDView({
                 key={item.label}
                 style={{ display: 'flex', alignItems: 'center', gap: 6 }}
               >
-                <span style={{ color: item.color, fontSize: 14 }}>
-                  {item.symbol}
-                </span>
+                <span style={{ color: item.color }}>{item.symbol}</span>
                 <span style={{ color: C.textMuted, fontSize: 12 }}>
                   {item.label}
                 </span>
