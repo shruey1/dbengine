@@ -2,8 +2,8 @@
 
 async function post(path, body) {
   const res = await fetch(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 
@@ -23,31 +23,31 @@ export function generateModel(
   modelType,
   dbEngine
 ) {
-  return post('/workflow/generate', {
+  return post("/workflow/generate", {
     user_query: userQuery,
-    operation: operation || '',
+    operation: operation || "",
     existing_model: existingModel || null,
-    model_type: modelType || 'both',
-    db_engine: dbEngine || '',
+    model_type: modelType || "both",
+    db_engine: dbEngine || "",
   });
 }
 
 export function validateAndGenerateSQL(dataModel, operation) {
-  return post('/workflow/validate', {
+  return post("/workflow/validate", {
     data_model: dataModel,
     operation: operation,
   });
 }
 
 export function approveAndGenerateSQL(dataModel, operation) {
-  return post('/workflow/approve', {
+  return post("/workflow/approve", {
     data_model: dataModel,
     operation: operation,
   });
 }
 
 export function applyFeedbackAndGenerateSQL(dataModel, feedback, operation) {
-  return post('/workflow/feedback', {
+  return post("/workflow/feedback", {
     data_model: dataModel,
     feedback: feedback,
     operation: operation,
@@ -55,36 +55,38 @@ export function applyFeedbackAndGenerateSQL(dataModel, feedback, operation) {
 }
 
 export function generateERD(sql, title) {
-  return post('/workflow/erd', {
+  return post("/workflow/erd", {
     sql: sql,
-    title: title || 'Entity Relationship Diagram',
+    title: title || "Entity Relationship Diagram",
   });
 }
 
 export function generateERDXML(sql, title) {
-  return post('/workflow/erd/xml', {
+  return post("/workflow/erd/xml", {
     sql: sql,
-    title: title || 'Entity Relationship Diagram',
+    title: title || "Entity Relationship Diagram",
+  });
+}
+
+export function generateERDPDM(sql, title) {
+  return post("/workflow/erd/pdm", {
+    sql: sql,
+    title: title || "Physical Data Model",
   });
 }
 
 export function generateERDFromModel(dataModel, title) {
-  return post('/workflow/erd/from-model', {
+  return post("/workflow/erd/from-model", {
     data_model: dataModel,
-    title: title || 'Entity Relationship Diagram',
+    title: title || "Entity Relationship Diagram",
   });
 }
 
-export async function generateERDPDM(sql, title = "Physical Data Model") {
-  const res = await fetch("/workflow/erd/pdm", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sql, title }),
+// #1 — prompt summary for InputForm sidebar
+export function getPromptSummary(userQuery, dbEngine, modelType) {
+  return post("/workflow/prompt-summary", {
+    user_query: userQuery,
+    db_engine: dbEngine || "MySQL",
+    model_type: modelType || "both",
   });
-
-  if (!res.ok) {
-    throw new Error("PDM generation failed");
-  }
-
-  return res.json();
 }
