@@ -236,7 +236,14 @@ function RelationshipsList({ rels }) {
   );
 }
 
-export function ModelViewer({ dataModel, activeTab }) {
+export function ModelViewer({ dataModel, activeTab, changes }) {
+  const addedTables = new Set(changes?.added_tables || []);
+  const removedTables = new Set(changes?.removed_tables || []);
+  const modifiedTables = new Set(changes?.modified_tables || []);
+  const addedColumns = new Set(changes?.added_columns || []);
+  const removedColumns = new Set(changes?.removed_columns || []);
+  const modifiedColumns = new Set(changes?.modified_columns || []);
+  
   if (!dataModel) return null;
 
   if (activeTab === 'json') {
