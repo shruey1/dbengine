@@ -1,8 +1,11 @@
 import { useState } from 'react';
 
 import { Btn, Badge, ErrorBanner, Spinner } from './ui/Primitives';
+
 import { ModelViewer } from './ModelViewer';
+
 import { ValidationPanel } from './ValidationPanel';
+
 import { generateERDFromModel } from '../api/client';
 
 var C = {
@@ -22,6 +25,7 @@ var C = {
 
 function innerTabStyle(active, color) {
   var c = color || C.accent;
+
   return {
     padding: '7px 18px',
     borderRadius: 8,
@@ -35,8 +39,53 @@ function innerTabStyle(active, color) {
   };
 }
 
+// ── Labelled badge: shows “LABEL · VALUE” ────────────────────────────────────
+
+function LabelledBadge({ label, value, color }) {
+  var c = color || C.accent;
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
+        padding: '4px 12px',
+        borderRadius: 20,
+        fontSize: 12,
+        fontWeight: 500,
+        background: c + '14',
+        border: '1px solid ' + c + '44',
+        color: C.textDim,
+      }}
+    >
+      <span
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.07em',
+          color: C.textMuted,
+        }}
+      >
+        {label}
+      </span>
+      <span
+        style={{
+          width: 1,
+          height: 12,
+          background: c + '44',
+          display: 'inline-block',
+        }}
+      />
+      <span style={{ fontWeight: 700, color: c }}>{value}</span>
+    </span>
+  );
+}
+
 function SuggestionChips({ suggestions, onApply }) {
   if (!suggestions || !suggestions.length) return null;
+
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
       {suggestions.map(function (s, i) {
@@ -68,6 +117,7 @@ function SuggestionChips({ suggestions, onApply }) {
 }
 
 // ── Inline ERD panel ─────────────────────────────────────────────────────────
+
 function ERDPanel({ dataModel }) {
   var [erdData, setErdData] = useState(null);
   var [erdLoading, setErdLoading] = useState(false);
@@ -79,6 +129,7 @@ function ERDPanel({ dataModel }) {
     setErdLoading(true);
     setErdError('');
     setGenerated(false);
+
     generateERDFromModel(dataModel)
       .then(function (res) {
         setErdData(res);
@@ -95,13 +146,13 @@ function ERDPanel({ dataModel }) {
 
   function downloadPNG() {
     if (!erdData || !erdData.image_base64) return;
+
     var link = document.createElement('a');
     link.href = 'data:image/png;base64,' + erdData.image_base64;
     link.download = 'erd_preview.png';
     link.click();
   }
 
-  // Not yet generated
   if (!generated && !erdLoading) {
     return (
       <div
@@ -128,8 +179,8 @@ function ERDPanel({ dataModel }) {
           }}
         >
           Generate an ERD directly from your data model JSON — no SQL step
-          required. Download it, review it, then proceed to validate and
-          generate SQL.
+          required. Download it, review it, then proceed to validate and generate
+          SQL.
         </p>
         <Btn
           onClick={generate}
@@ -197,23 +248,25 @@ function ERDPanel({ dataModel }) {
               marginBottom: 16,
             }}
           >
-            <p style={{ color: C.amber, marginBottom: 6 }}>Install Graphviz:</p>
+            <p style={{ color: C.amber, marginBottom: 6 }}>
+              Install Graphviz:
+            </p>
             <p style={{ marginBottom: 4 }}>
-              Windows:{' '}
-              <span style={{ color: C.green }}>winget install graphviz</span>
+              Windows: <span style={{ color: C.green }}>winget install graphviz</span>
             </p>
             <p>Then restart uvicorn.</p>
           </div>
         )}
+
         <Btn onClick={generate}>↺ Try Again</Btn>
       </div>
     );
   }
 
   var hasImage = erdData && erdData.image_base64;
+
   return (
     <div>
-      {/* Toolbar */}
       <div
         style={{
           display: 'flex',
@@ -226,6 +279,7 @@ function ERDPanel({ dataModel }) {
         {erdData && erdData.table_count > 0 && (
           <Badge color={C.accent}>{erdData.table_count} tables</Badge>
         )}
+
         {erdData && erdData.relationship_count > 0 && (
           <Badge color={C.purple}>
             {erdData.relationship_count} relationships
@@ -262,6 +316,7 @@ function ERDPanel({ dataModel }) {
           >
             −
           </button>
+
           <span
             style={{
               color: C.textMuted,
@@ -272,6 +327,7 @@ function ERDPanel({ dataModel }) {
           >
             {Math.round(zoom * 100)}%
           </span>
+
           <button
             onClick={function () {
               setZoom(function (z) {
@@ -294,6 +350,7 @@ function ERDPanel({ dataModel }) {
           >
             +
           </button>
+
           <button
             onClick={function () {
               setZoom(1);
@@ -313,11 +370,7 @@ function ERDPanel({ dataModel }) {
         </div>
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-          <Btn
-            variant="ghost"
-            onClick={generate}
-            style={{ padding: '6px 14px', fontSize: 12 }}
-          >
+          <Btn variant="ghost" onClick={generate} style={{ padding: '6px 14px', fontSize: 12 }}>
             ↺ Regenerate
           </Btn>
 
@@ -333,7 +386,6 @@ function ERDPanel({ dataModel }) {
         </div>
       </div>
 
-      {/* Image */}
       {hasImage && (
         <div
           style={{
@@ -363,7 +415,6 @@ function ERDPanel({ dataModel }) {
         </div>
       )}
 
-      {/* Legend */}
       <div style={{ marginTop: 12, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
         {[
           { color: C.amber, symbol: '🔑', label: 'Primary Key' },
@@ -372,16 +423,9 @@ function ERDPanel({ dataModel }) {
           { color: C.green, symbol: 'U', label: 'UNIQUE' },
         ].map(function (item) {
           return (
-            <div
-              key={item.label}
-              style={{ display: 'flex', alignItems: 'center', gap: 5 }}
-            >
-              <span style={{ color: item.color, fontSize: 13 }}>
-                {item.symbol}
-              </span>
-              <span style={{ color: C.textMuted, fontSize: 11 }}>
-                {item.label}
-              </span>
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ color: item.color, fontSize: 13 }}>{item.symbol}</span>
+              <span style={{ color: C.textMuted, fontSize: 11 }}>{item.label}</span>
             </div>
           );
         })}
@@ -391,6 +435,7 @@ function ERDPanel({ dataModel }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
+
 export function ModelReview({
   dataModel,
   operation,
@@ -401,27 +446,32 @@ export function ModelReview({
   onAutoValidate,
   onApprove,
   onFeedback,
+  dbEngine,
 }) {
   var hasRelational = !!(dataModel && dataModel.relational_model);
   var hasAnalytical = !!(dataModel && dataModel.analytical_model);
+
   var modelViewerKey = hasRelational ? 'relational' : 'analytical';
-  // tabs: 'model' | 'json' | 'erd'
+
   var [activeTab, setActiveTab] = useState('model');
   var [feedbackOpen, setFeedbackOpen] = useState(false);
   var [feedbackText, setFeedbackText] = useState('');
+
   var autoFailed = validationMode === 'auto' && validation && !validation.is_valid;
 
   function getScopedJson() {
     if (!dataModel) return {};
+
     if (hasRelational && hasAnalytical) return dataModel;
     if (hasRelational) return dataModel.relational_model;
     if (hasAnalytical) return dataModel.analytical_model;
+
     return dataModel;
-    // falls back to entire object
   }
 
   function handleFeedbackSubmit() {
     if (!feedbackText.trim()) return;
+
     onFeedback(feedbackText);
     setFeedbackText('');
     setFeedbackOpen(false);
@@ -434,225 +484,183 @@ export function ModelReview({
 
   function handleFixAll() {
     var parts = [];
+
     if (validation.errors && validation.errors.length)
       parts.push('Fix these errors: ' + validation.errors.join('; '));
+
     if (validation.suggestions && validation.suggestions.length)
       parts.push('Also apply: ' + validation.suggestions.join('; '));
+
     setFeedbackText(parts.join('\n'));
     setFeedbackOpen(true);
   }
 
-  var modelLabel =
-    hasRelational && hasAnalytical
-      ? 'Model'
-      : hasRelational
-      ? 'Relational Model'
-      : 'Analytical Model';
+  // ── Derive badge values ───────────────────────────────────────────────────
 
-  var modelColor =
+  var modeLabel = operation === 'CREATE' ? 'Create' : 'Modify';
+  var modeColor = operation === 'CREATE' ? C.green : C.amber;
+
+  var modelTypeLabel =
+    hasRelational && hasAnalytical
+      ? 'Both'
+      : hasRelational
+      ? 'Relational'
+      : 'Analytical';
+
+  var modelTypeColor =
     hasRelational && !hasAnalytical
       ? C.green
       : hasAnalytical && !hasRelational
       ? C.purple
       : C.accent;
 
-  return (
-    <div>
-      {/* Page header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          marginBottom: 24,
-          gap: 16,
-          flexWrap: 'wrap',
-        }}
-      >
-        <div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              marginBottom: 6,
-              flexWrap: 'wrap',
-            }}
-          >
-            <h2 style={{ fontSize: 22, fontWeight: 700 }}>Data Model</h2>
-            <Badge color={operation === 'CREATE' ? C.green : C.amber}>
-              {operation}
-            </Badge>
-            <Badge color={modelColor}>
-              {hasRelational && !hasAnalytical
-                ? 'Relational'
-                : hasAnalytical && !hasRelational
-                ? 'Analytical'
-                : 'Both'}
-            </Badge>
+  var engineLabel =
+    dbEngine ||
+    (dataModel && dataModel.db_type) ||
+    (dataModel && dataModel.relational_model && dataModel.relational_model.db_type) ||
+    (dataModel && dataModel.analytical_model && dataModel.analytical_model.db_type) ||
+    'MySQL';
 
-            {dataModel && dataModel.db_type && (
-              <Badge color={C.textMuted}>{dataModel.db_type}</Badge>
-            )}
+  var validationLabel = validationMode === 'auto' ? 'Auto' : 'Manual';
+  var validationColor = validationMode === 'auto' ? C.purple : C.accent;
 
-            <Badge color={validationMode === 'auto' ? C.purple : C.accent}>
-              {validationMode === 'auto' ? 'Auto Validate' : 'Manual Review'}
-            </Badge>
-          </div>
-          <p style={{ color: C.textMuted, fontSize: 14 }}>
-            Review your data model. Preview the ERD, check the raw JSON, then
-            validate and generate SQL.
-          </p>
-        </div>
+  var modelLabel = 'Model';
 
-        {/* Action buttons */}
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          {validationMode === 'auto' ? (
-            (!validation || validation.is_valid) && (
-              <Btn onClick={onAutoValidate} loading={loading}>
-                Validate &amp; Generate SQL →
-              </Btn>
-            )
-          ) : (
-            <>
-              <Btn
-                variant="ghost"
-                onClick={function () {
-                  setFeedbackOpen(function (o) {
-                    return !o;
-                  });
-                }}
-                disabled={loading}
-              >
-                ✎ Suggest Changes
-              </Btn>
-              <Btn variant="success" onClick={onApprove} loading={loading}>
-                ✓ Approve &amp; Generate SQL
-              </Btn>
-            </>
-          )}
-        </div>
-      </div>
+return (
+  <div>
 
-      {/* Validation result */}
-      {validation && <ValidationPanel result={validation} />}
+    {/* Page header */}
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        marginBottom: 24,
+        gap: 16,
+        flexWrap: 'wrap',
+      }}
+    >
+      <div>
+        <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>
+          Data Model
+        </h2>
 
-      {/* Auto-validation failed: fix panel */}
-      {autoFailed && (
+        {/* FIX #4 — Labelled badges */}
         <div
           style={{
-            background: C.surface,
-            border: '1px solid ' + C.amber + '44',
-            borderRadius: 14,
-            padding: 20,
-            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+            marginBottom: 10,
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 12,
-              marginBottom: 14,
-            }}
-          >
-            <div>
-              <p
-                style={{
-                  fontWeight: 700,
-                  fontSize: 15,
-                  color: C.text,
-                  marginBottom: 4,
-                }}
-              >
-                Fix &amp; Retry
-              </p>
-              <p style={{ color: C.textMuted, fontSize: 13 }}>
-                Apply suggested fixes or describe changes, then re-validate.
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <Btn
-                variant="ghost"
-                onClick={handleFixAll}
-                disabled={loading}
-                style={{ borderColor: C.amber + '55', color: C.amber }}
-              >
-                ⚡ Auto-fix All
-              </Btn>
-              <Btn onClick={onAutoValidate} loading={loading} style={{ background: C.accent }}>
-                ↺ Re-validate
-              </Btn>
-            </div>
+          <LabelledBadge label="Mode" value={modeLabel} color={modeColor} />
+          <LabelledBadge
+            label="Model Type"
+            value={modelTypeLabel}
+            color={modelTypeColor}
+          />
+          <LabelledBadge label="DB Engine" value={engineLabel} color={C.textDim} />
+          <LabelledBadge
+            label="Validation"
+            value={validationLabel}
+            color={validationColor}
+          />
+        </div>
+
+        <p style={{ color: C.textMuted, fontSize: 14 }}>
+          Review your data model. Preview the ERD, check the raw JSON, then
+          validate and generate SQL.
+        </p>
+      </div>
+
+      {/* Action buttons */}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        {validationMode === 'auto' ? (
+          (!validation || validation.is_valid) && (
+            <Btn onClick={onAutoValidate} loading={loading}>
+              Validate &amp; Generate SQL →
+            </Btn>
+          )
+        ) : (
+          <>
+            <Btn
+              variant="ghost"
+              onClick={function () {
+                setFeedbackOpen(function (o) {
+                  return !o;
+                });
+              }}
+              disabled={loading}
+            >
+              ✎ Suggest Changes
+            </Btn>
+            <Btn variant="success" onClick={onApprove} loading={loading}>
+              ✓ Approve &amp; Generate SQL
+            </Btn>
+          </>
+        )}
+      </div>
+    </div>
+
+    {/* Validation result */}
+    {validation && <ValidationPanel result={validation} />}
+
+    {/* Auto-validation failed: fix panel */}
+    {autoFailed && (
+      <div
+        style={{
+          background: C.surface,
+          border: '1px solid ' + C.amber + '44',
+          borderRadius: 14,
+          padding: 20,
+          marginBottom: 20,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12,
+            marginBottom: 14,
+          }}
+        >
+          <div>
+            <p
+              style={{
+                fontWeight: 700,
+                fontSize: 15,
+                color: C.text,
+                marginBottom: 4,
+              }}
+            >
+              Fix &amp; Retry
+            </p>
+            <p style={{ color: C.textMuted, fontSize: 13 }}>
+              Apply suggested fixes or describe changes, then re-validate.
+            </p>
           </div>
 
-          {validation.suggestions && validation.suggestions.length > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <p
-                style={{
-                  color: C.textMuted,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  marginBottom: 8,
-                }}
-              >
-                Quick fixes
-              </p>
-              <SuggestionChips
-                suggestions={validation.suggestions}
-                onApply={handleChipClick}
-              />
-            </div>
-          )}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Btn
+              variant="ghost"
+              onClick={handleFixAll}
+              disabled={loading}
+              style={{ borderColor: C.amber + '55', color: C.amber }}
+            >
+              ⚡ Auto-fix All
+            </Btn>
+            <Btn onClick={onAutoValidate} loading={loading} style={{ background: C.accent }}>
+              ↺ Re-validate
+            </Btn>
+          </div>
+        </div>
 
-          {validation.errors && validation.errors.length > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <p
-                style={{
-                  color: C.textMuted,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  marginBottom: 8,
-                }}
-              >
-                Fix errors
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {validation.errors.map(function (e, i) {
-                  return (
-                    <button
-                      key={i}
-                      onClick={function () {
-                        handleChipClick('Fix: ' + e);
-                      }}
-                      style={{
-                        padding: '6px 14px',
-                        borderRadius: 20,
-                        fontSize: 12,
-                        fontWeight: 500,
-                        cursor: 'pointer',
-                        border: '1px solid ' + C.red + '55',
-                        background: C.redSoft,
-                        color: C.red,
-                        transition: 'all 0.15s',
-                        textAlign: 'left',
-                      }}
-                    >
-                      🔧 {e}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div>
+        {validation.suggestions && validation.suggestions.length > 0 && (
+          <div style={{ marginBottom: 14 }}>
             <p
               style={{
                 color: C.textMuted,
@@ -663,60 +671,80 @@ export function ModelReview({
                 marginBottom: 8,
               }}
             >
-              Custom changes
+              Quick fixes
             </p>
-            <textarea
-              value={feedbackText}
-              onChange={function (e) {
-                setFeedbackText(e.target.value);
-              }}
-              placeholder="e.g. Add foreign key constraints, fix data type mismatches..."
-              style={{
-                width: '100%',
-                minHeight: 90,
-                background: C.card,
-                border: '1px solid ' + C.border,
-                borderRadius: 8,
-                padding: 12,
-                fontSize: 14,
-                color: C.text,
-                resize: 'vertical',
-                outline: 'none',
-                marginBottom: 10,
-              }}
+            <SuggestionChips
+              suggestions={validation.suggestions}
+              onApply={handleChipClick}
             />
-            <Btn
-              onClick={handleFeedbackSubmit}
-              loading={loading}
-              disabled={!feedbackText.trim()}
-            >
-              Apply Changes &amp; Generate SQL
-            </Btn>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Manual feedback panel */}
-      {validationMode === 'manual' && feedbackOpen && (
-        <div
-          style={{
-            background: C.surface,
-            border: '1px solid ' + C.border,
-            borderRadius: 12,
-            padding: 20,
-            marginBottom: 20,
-          }}
-        >
-          <p style={{ fontWeight: 700, marginBottom: 10 }}>Suggest Changes</p>
+        {validation.errors && validation.errors.length > 0 && (
+          <div style={{ marginBottom: 14 }}>
+            <p
+              style={{
+                color: C.textMuted,
+                fontSize: 12,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                marginBottom: 8,
+              }}
+            >
+              Fix errors
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {validation.errors.map(function (e, i) {
+                return (
+                  <button
+                    key={i}
+                    onClick={function () {
+                      handleChipClick('Fix: ' + e);
+                    }}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: 20,
+                      fontSize: 12,
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      border: '1px solid ' + C.red + '55',
+                      background: C.redSoft,
+                      color: C.red,
+                      transition: 'all 0.15s',
+                      textAlign: 'left',
+                    }}
+                  >
+                    🔧 {e}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div>
+          <p
+            style={{
+              color: C.textMuted,
+              fontSize: 12,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              marginBottom: 8,
+            }}
+          >
+            Custom changes
+          </p>
           <textarea
             value={feedbackText}
             onChange={function (e) {
               setFeedbackText(e.target.value);
             }}
-            placeholder="Describe what you'd like to change, add, or remove..."
+            placeholder="e.g. Add foreign key constraints, fix data type mismatches..."
             style={{
               width: '100%',
-              minHeight: 100,
+              minHeight: 90,
               background: C.card,
               border: '1px solid ' + C.border,
               borderRadius: 8,
@@ -725,86 +753,130 @@ export function ModelReview({
               color: C.text,
               resize: 'vertical',
               outline: 'none',
-              marginBottom: 12,
+              marginBottom: 10,
             }}
           />
-          <div style={{ display: 'flex', gap: 10 }}>
-            <Btn
-              onClick={handleFeedbackSubmit}
-              loading={loading}
-              disabled={!feedbackText.trim()}
-            >
-              Apply &amp; Generate SQL
-            </Btn>
-            <Btn
-              variant="ghost"
-              onClick={function () {
-                setFeedbackOpen(false);
-              }}
-            >
-              Cancel
-            </Btn>
-          </div>
+          <Btn
+            onClick={handleFeedbackSubmit}
+            loading={loading}
+            disabled={!feedbackText.trim()}
+          >
+            Apply Changes &amp; Generate SQL
+          </Btn>
         </div>
-      )}
-
-      <ErrorBanner message={error} />
-
-      {/* Tabs: Model | ERD Preview | Raw JSON */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        <button
-          style={innerTabStyle(activeTab === 'model', modelColor)}
-          onClick={function () {
-            setActiveTab('model');
-          }}
-        >
-          {modelLabel}
-        </button>
-        <button
-          style={innerTabStyle(activeTab === 'erd', C.purple)}
-          onClick={function () {
-            setActiveTab('erd');
-          }}
-        >
-          ⬡ ERD Preview
-        </button>
-        <button
-          style={innerTabStyle(activeTab === 'json', C.textMuted)}
-          onClick={function () {
-            setActiveTab('json');
-          }}
-        >
-          Raw JSON
-        </button>
       </div>
+    )}
 
-      {/* Tab content */}
-      {activeTab === 'model' && (
-        <ModelViewer dataModel={dataModel} activeTab={modelViewerKey} />
-      )}
-
-      {activeTab === 'erd' && <ERDPanel dataModel={dataModel} />}
-
-      {activeTab === 'json' && (
-        <pre
-          style={{
-            background: '#090b10',
-            border: '1px solid ' + C.border,
-            borderRadius: 12,
-            padding: 20,
-            fontSize: 12,
-            color: '#c9d1d9',
-            overflowX: 'auto',
-            maxHeight: 600,
-            overflowY: 'auto',
-            fontFamily: '"Fira Code", monospace',
-            lineHeight: 1.6,
+    {/* Manual feedback panel */}
+    {validationMode === 'manual' && feedbackOpen && (
+      <div
+        style={{
+          background: C.surface,
+          border: '1px solid ' + C.border,
+          borderRadius: 12,
+          padding: 20,
+          marginBottom: 20,
+        }}
+      >
+        <p style={{ fontWeight: 700, marginBottom: 10 }}>Suggest Changes</p>
+        <textarea
+          value={feedbackText}
+          onChange={function (e) {
+            setFeedbackText(e.target.value);
           }}
-        >
-          {JSON.stringify(getScopedJson(), null, 2)}
-        </pre>
-      )}
+          placeholder="Describe what you'd like to change, add, or remove..."
+          style={{
+            width: '100%',
+            minHeight: 100,
+            background: C.card,
+            border: '1px solid ' + C.border,
+            borderRadius: 8,
+            padding: 12,
+            fontSize: 14,
+            color: C.text,
+            resize: 'vertical',
+            outline: 'none',
+            marginBottom: 12,
+          }}
+        />
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Btn
+            onClick={handleFeedbackSubmit}
+            loading={loading}
+            disabled={!feedbackText.trim()}
+          >
+            Apply &amp; Generate SQL
+          </Btn>
+          <Btn
+            variant="ghost"
+            onClick={function () {
+              setFeedbackOpen(false);
+            }}
+          >
+            Cancel
+          </Btn>
+        </div>
+      </div>
+    )}
+
+    <ErrorBanner message={error} />
+
+    {/* Tabs */}
+    <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+      <button
+        style={innerTabStyle(activeTab === 'model', modelTypeColor)}
+        onClick={function () {
+          setActiveTab('model');
+        }}
+      >
+        {modelLabel}
+      </button>
+
+      <button
+        style={innerTabStyle(activeTab === 'erd', C.purple)}
+        onClick={function () {
+          setActiveTab('erd');
+        }}
+      >
+        ⬡ ERD Preview
+      </button>
+
+      <button
+        style={innerTabStyle(activeTab === 'json', C.textMuted)}
+        onClick={function () {
+          setActiveTab('json');
+        }}
+      >
+        Raw JSON
+      </button>
     </div>
-  );
+
+    {/* Tab content */}
+    {activeTab === 'model' && (
+      <ModelViewer dataModel={dataModel} activeTab={modelViewerKey} />
+    )}
+
+    {activeTab === 'erd' && <ERDPanel dataModel={dataModel} />}
+
+    {activeTab === 'json' && (
+      <pre
+        style={{
+          background: '#090b10',
+          border: '1px solid ' + C.border,
+          borderRadius: 12,
+          padding: 20,
+          fontSize: 12,
+          color: '#c9d1d9',
+          overflowX: 'auto',
+          maxHeight: 600,
+          overflowY: 'auto',
+          fontFamily: '"Fira Code", monospace',
+          lineHeight: 1.6,
+        }}
+      >
+        {JSON.stringify(getScopedJson(), null, 2)}
+      </pre>
+    )}
+  </div>
+);
 }
-``
