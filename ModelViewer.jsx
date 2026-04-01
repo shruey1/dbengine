@@ -37,7 +37,7 @@ function Badge({ color, children }) {
   );
 }
 
-function TableCard({ table, badge }) {
+function TableCard({ table, badge,addedColumns, removedColumns, modifiedColumns }) {
   const [open, setOpen] = useState(true);
   const cols = table.columns || [];
   const pk = Array.isArray(table.primary_key)
@@ -77,9 +77,19 @@ function TableCard({ table, badge }) {
           }}
         >
           {table.name}
+        
         </span>
 
         {badge && <Badge color={badge.color}>{badge.label}</Badge>}
+
+        {addedTables?.has(table.name) && (
+          <Badge color={C.green}>NEW</Badge>
+        )}
+
+        {modifiedTables?.has(table.name) && (
+          <Badge color={C.amber}>MODIFIED</Badge>
+        )}
+
 
         <span style={{ marginLeft: 'auto', color: C.textMuted, fontSize: 12 }}>
           {cols.length} cols
@@ -140,19 +150,32 @@ function TableCard({ table, badge }) {
                     key={i}
                     style={{
                       borderBottom: '1px solid ' + C.border + '22',
-                      background: isPk ? C.accentSoft : 'transparent',
+                      background:
+                        addedColumns?.has(table.name + '.' + col.name)
+                          ? C.green + '14'
+                          : modifiedColumns?.has(table.name + '.' + col.name)
+                          ? C.amber + '14'
+                          : isPk
+                          ? C.accentSoft
+                          : 'transparent',
                     }}
                   >
                     <td
-                      style={{
-                        padding: '8px 14px',
-                        fontFamily: 'monospace',
-                        color: isPk ? C.accent : C.text,
-                        fontWeight: isPk ? 700 : 400,
-                      }}
-                    >
-                      {col.name}
-                    </td>
+                     style={{
+                       padding: '8px 14px',
+                       fontFamily: 'monospace',
+                       color: isPk ? C.accent : C.text,
+                       fontWeight: isPk ? 700 : 400,
+                     }}
+>
+                     {col.name}
+                     {addedColumns?.has(table.name + '.' + col.name) && (
+<span style={{ fontSize: 10, color: C.green, fontWeight: 700, marginLeft: 6 }}>NEW</span>
+                     )}
+                     {modifiedColumns?.has(table.name + '.' + col.name) && (
+<span style={{ fontSize: 10, color: C.amber, fontWeight: 700, marginLeft: 6 }}>CHANGED</span>
+                     )}
+</td>
                     <td
                       style={{
                         padding: '8px 14px',
@@ -243,7 +266,7 @@ export function ModelViewer({ dataModel, activeTab, changes }) {
   const addedColumns = new Set(changes?.added_columns || []);
   const removedColumns = new Set(changes?.removed_columns || []);
   const modifiedColumns = new Set(changes?.modified_columns || []);
-  
+
   if (!dataModel) return null;
 
   if (activeTab === 'json') {
@@ -293,8 +316,10 @@ export function ModelViewer({ dataModel, activeTab, changes }) {
         </div>
 
         {(m.tables || []).map((t, i) => (
-          <TableCard key={i} table={t} />
-        ))}
+<TableCard key={i} table={t}
+           addedTables={addedTables} modifiedTables={modifiedTables}
+           addedColumns={addedColumns} modifiedColumns={modifiedColumns} />
+       ))}
         <RelationshipsList rels={m.relationships} />
       </div>
     );
@@ -325,10 +350,14 @@ export function ModelViewer({ dataModel, activeTab, changes }) {
         </div>
 
         {(a.fact_tables || []).map((t, i) => (
-          <TableCard key={i} table={t} badge={{ color: C.purple, label: 'fact' }} />
-        ))}
+<TableCard key={i} table={t} badge={{ color: C.purple, label: 'fact' }}
+           addedTables={addedTables} modifiedTables={modifiedTables}
+           addedColumns={addedColumns} modifiedColumns={modifiedColumns} />
+       ))}
         {(a.dimension_tables || []).map((t, i) => (
-          <TableCard key={i} table={t} badge={{ color: C.amber, label: 'dim' }} />
+          <TableCard key={i} table={t} badge={{ color: C.amber, label: 'dim' }}
+                     addedTables={addedTables} modifiedTables={modifiedTables}
+                     addedColumns={addedColumns} modifiedColumns={modifiedColumns} />
         ))}
         <RelationshipsList rels={a.relationships} />
       </div>
